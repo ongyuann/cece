@@ -14,7 +14,7 @@ sudo apt update && sudo apt upgrade
 sudo apt-get dist-upgrade
 echo "[+] reboot? [y/N]"
 read answer
-if [$answer == "y"]
+if [ $answer = "y" ]
 then
   sudo reboot
 else
@@ -25,7 +25,7 @@ fi
 echo "[+] installing realtek drivers.."
 echo "[+] first time? [y/N]"
 read answer
-if [$answer == "y"]
+if [ $answer = "y" ]
 then
   current=$(pwd)
   sudo apt-get install realtek-rtl88xxau-dkms
