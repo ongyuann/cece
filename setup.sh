@@ -27,6 +27,7 @@ echo "[+] first time? [y/N]"
 read answer
 if [$answer == "y"]
 then
+  current=$(pwd)
   sudo apt-get install realtek-rtl88xxau-dkms
   sudo apt-get install dkms
   cd /opt
@@ -34,6 +35,7 @@ then
   cd rtl8812au
   make
   sudo make install
+  cd $current
 else
   echo "[!] assuming realtek drivers installed! continuing"
 fi
