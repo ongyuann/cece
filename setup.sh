@@ -109,6 +109,7 @@ sudo apt-get install sublime-text
 sudo apt-get install krb5-user
 sudo -H pip install -U oletools
 sudo apt-get install mono-complete
+sudo apt-get install python3-impacket
 sudo gem install evil-winrm
 sudo msfdb start
 echo "[+] msfdb started"
