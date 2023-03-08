@@ -57,5 +57,8 @@ https://0af3007a032c23bcc10958b000a10065.web-security-academy.net/asdf
 # now the "Back" link simply reads:
 
 javascript:alert(document.cookie)
+
+# note: this uses the `javascript:` protocol to run text as JavaScript instead of opening it as a normal link
+# sauce: https://riptutorial.com/html/example/2120/link-that-runs-javascript
 ```
 
